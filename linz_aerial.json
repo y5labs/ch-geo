@@ -1,0 +1,15 @@
+{
+  "version": 8,
+  "sources": {
+    "basemaps-aerial": {
+      "type": "raster",
+      "tiles": [
+        "https://basemaps.linz.govt.nz/v1/tiles/aerial/WebMercatorQuad/{z}/{x}/{y}.webp?api=c01h3btkyny4fac0h17rrew8kz6"
+      ],
+      "tileSize": 256
+    }
+  },
+  "layers": [
+    { "id": "basemaps-aerial", "type": "raster", "source": "basemaps-aerial" }
+  ]
+}
