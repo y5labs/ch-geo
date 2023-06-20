@@ -9,55 +9,68 @@ import { VectorTile } from '@mapbox/vector-tile'
 import pbf from 'pbf'
 // import { cellToBoundary, cellToLatLng } from 'h3-js'
 
-const p_x = x => {
-  return x / 360 + 0.5;
-}
+const p_x = x => x / 360 + 0.5
 
 const p_y = y => {
-  const sin = Math.sin(y * Math.PI / 180);
-  const y2 = 0.5 - 0.25 * Math.log((1 + sin) / (1 - sin)) / Math.PI;
-  return y2 < 0 ? 0 : y2 > 1 ? 1 : y2;
+  const sin = Math.sin(y * Math.PI / 180)
+  const y2 = 0.5 - 0.25 * Math.log((1 + sin) / (1 - sin)) / Math.PI
+  return y2 < 0 ? 0 : y2 > 1 ? 1 : y2
 }
 
-const to_tile_space = (x, y, z, extent, coord) => {
+const to_tile_space = ([z, x, y], extent, coord) => {
   const z2 = 1 << z
-  return [
-    Math.round(extent * (p_x(coord[0]) * z2 - x)),
-    Math.round(extent * (p_y(coord[1]) * z2 - y))]
+  return {
+    x: Math.round(extent * (p_x(coord[0]) * z2 - x)),
+    y: Math.round(extent * (p_y(coord[1]) * z2 - y))
+  }
 }
 
-console.log(to_tile_space(0, 0, 0, 4096, [-90, 66.5]))
-
-const tile = vtpbf({
-	layers: {
-    test: {
+// TODO: This could take GeoJSON as input
+const generate_tile = (tile_coord, layers) => vtpbf({
+  layers: Object.fromEntries(
+    layers.map(layer => [layer.name, {
+      ...layer,
       version: 2,
-      name: 'test',
-      extent: 4096,
-      length: 1,
+      length: layer.features.length,
       feature: i => {
+        const feature = layer.features[i]
         return {
-          id: 1,
-          properties: {
-            custom1: true,
-            custom2: 1,
-            custom3: 'true'
-          },
-          // type 1 = point, 2 = line string, 3 = polygon
-          type: 1,
-          loadGeometry: () => [
-            [
-              { x: 1024, y: 1024 }
-            ]
-          ]
+          ...feature,
+          loadGeometry: () =>
+            feature.geometry.map(ring =>
+              ring.map(coord =>
+                to_tile_space(tile_coord, layer.extent, coord)))
         }
       }
-    }
-  }
+    }])
+  )
 })
 
+const tile = generate_tile([0, 1, 0], [
+  {
+    name: 'test',
+    extent: 4096,
+    features: [
+      {
+        id: 1,
+        type: 1,
+        properties: {
+          custom1: true,
+          custom2: 1,
+          custom3: 'true'
+        },
+        geometry: [
+          [
+            [-45, 66.5]
+          ]
+        ]
+      }
+    ]
+  }
+])
+
 const tile_res = new VectorTile(new pbf(tile))
-console.log(tile_res.layers.test.feature(0).toGeoJSON(0, 0, 0))
+console.log(tile_res.layers.test.feature(0).toGeoJSON(1, 0, 0))
 
 // const ch = new ClickHouse({
 //   url: 'localhost',
