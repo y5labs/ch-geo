@@ -1,0 +1,20 @@
+version: "3.0"
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.5.3.24
+    volumes:
+    - ch-geo-log:/var/log/clickhouse-server
+    - ch-geo-data:/var/lib/clickhouse
+    environment:
+    - query_profiler_real_time_period_ns=0
+    - query_profiler_cpu_time_period_ns=0
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    ports:
+    - "8123:8123"
+    - "9123:9000"
+volumes:
+  ch-geo-log:
+  ch-geo-data:

@@ -1,0 +1,133 @@
+@import url('../node_modules/modern-normalize/modern-normalize.css')
+
+$bg = #FFFFFF
+$fg = #1b2b34
+$y = #FE5101
+
+html, body, #root
+  height 100%
+  width 100%
+  font-family sans-serif
+  min-height -webkit-fill-available
+  margin 0
+  background-color $bg
+  color $fg
+  -moz-user-select none
+  -webkit-user-select none
+  -ms-user-select none
+  user-select none
+
+.overlay
+  position absolute
+  display flex
+  flex-direction column
+  justify-content flex-end
+  align-items flex-start
+  top 0
+  left 0
+  right 0
+  bottom 0
+  z-index 1
+  pointer-events none
+  > *,
+  > * *
+    pointer-events auto
+  &.hidden
+    background-color $bg
+
+canvas
+  touch-action none
+
+.views
+  color $fg
+  display flex
+  align-items center
+  justify-content center
+  a
+    display inline-block
+    margin 3px 0 3px 3px
+    padding 3px
+    font-size 1.2rem
+    color $fg
+    border 1px solid $fg
+    border-radius 3px
+    background-color $bg
+  span
+    display inline-table
+    margin-left 5px
+
+.depth-description
+  padding 4px 8px
+  border-radius 3px
+  background-color $bg
+
+.time-description
+  position absolute
+  bottom 34
+  left 3
+  color $fg
+  font-size 1.2rem
+  border 1px solid $fg
+  padding 5px 8px
+  border-radius 3px
+  background-color $bg
+
+.timeline
+  position absolute
+  pointer-events none
+  top 0
+  right 0
+  left 0
+  .timeline-controls
+    pointer-events auto
+    position absolute
+    left 0
+    top 0
+    display flex
+    align-items flex-start
+    justify-content center
+    a
+      margin 3px 0 3px 3px
+      display inline-block
+      text-decoration none
+      padding 3px 0
+      font-size 1.2rem
+      color $fg
+      border 1px solid transparent
+      border-radius 3px
+      background-color $bg
+  .handle
+    pointer-events auto
+    display block
+    position absolute
+    margin 3px 0 3px 3px
+    padding 3px
+    font-size 1.2rem
+    color $fg
+    border 1px solid $fg
+    border-radius 3px
+    background-color $bg
+    cursor ew-resize
+  .line
+    display block
+    margin 16px
+    margin-left calc(16px + 75px)
+    border-top 1px solid $fg
+
+svg.ts
+  pointer-events none
+  path.segment
+    fill-opacity 0.6
+  .inc-level-0
+    fill rgb(0, 200, 255)
+  .inc-level-1
+    fill rgb(0, 100, 255)
+  .inc-level-2
+    fill rgb(0, 0, 255)
+  .inc-level-3
+    fill #f3f
+  .dec-level-0,
+  .dec-level-1,
+  .dec-level-2,
+  .dec-level-3
+    fill rgb(116, 60, 37)

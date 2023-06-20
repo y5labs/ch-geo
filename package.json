@@ -1,0 +1,33 @@
+{
+  "name": "ch-geo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "scratch": "nodemon scratch.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "clickhouse": "^2.6.0",
+    "deck.gl": "^8.9.19",
+    "h3-js": "^4.1.0",
+    "maplibre-gl": "^3.1.0",
+    "modern-normalize": "^2.0.0",
+    "odo-route": "^1.7.1",
+    "page": "^1.11.6",
+    "pmtiles": "^2.8.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-map-gl": "^7.0.25",
+    "seacreature": "^2.17.0",
+    "stylus": "^0.59.0",
+    "vite": "^4.3.9"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
