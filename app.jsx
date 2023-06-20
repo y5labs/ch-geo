@@ -9,46 +9,6 @@ import tovt from 'geojson-vt'
 import { fromGeojsonVt } from 'vt-pbf'
 import { cellToBoundary, cellToLatLng } from 'h3-js'
 
-const h3t_protocol = async (params, cb) => {
-  const s = params.url.split(/\/|\./i)
-  // TODO: improve this?
-  const zxy = s.slice(s.length - 4, s.length - 1).map(parseInt)
-  const controller = new AbortController()
-  const signal = controller.signal
-  setTimeout(() => controller.abort(), 5000)
-  try {
-    const h3t_res = await fetch(params.url, { signal })
-    if (!h3t_res.ok) throw new Error(h3t_res.statusText)
-    const content = await h3t_res.json()
-    const feature_collection = {
-      type: 'FeatureCollection',
-      features: content.cells.map(properties => ({
-        properties,
-        geometry: {
-          type: 'Point',
-          coordinates: cellToLatLng(j.h3id).reverse()
-          // type: 'Polygon',
-          // coordinates: [cellToBoundary(j.h3id, true)]
-        }
-      }))
-    }
-    const tile_res = fromGeojsonVt(
-      { h3tlayer: tovt(feature_collection).getTile(...zxy) },
-      { version: 2 })
-    cb(null, tile_res, null, null)
-  }
-  catch (e) {
-    if (e.name == 'AbortError') e.message = `Timeout: Tile .../${zxy.join('/')}.h3t is taking too long to fetch`
-    cb(new Error(e))
-  }
-}
-
-maplibregl.addProtocol('h3t', async (params, cb) =>
-  h3t_protocol({ ...params, url: `http://${params.url.split('://')[1]}` }, cb))
-
-maplibregl.addProtocol('h3ts', async (params, cb) =>
-  h3t_protocol({ ...params, url: `https://${params.url.split('://')[1]}` }, cb))
-
 export default () => {
   const [viewState, setViewState] = useState({
     latitude: -37.7728,
