@@ -1,5 +1,4 @@
 import gm from 'global-mercator'
-import vtpbf from 'vt-pbf'
 
 const lnglat2google = gm.lngLatToGoogle
 const lnglat2googlefrac = gm.pointToTileFraction
@@ -126,26 +125,6 @@ const lnglat2tilespace = ([x, y, z], extent, lnglat) => {
   }
 }
 
-const generate_tile = (tile_coord, layers) => vtpbf({
-  layers: Object.fromEntries(
-    layers.map(layer => [layer.name, {
-      ...layer,
-      version: 2,
-      length: layer.features.length,
-      feature: i => {
-        const feature = layer.features[i]
-        return {
-          ...feature,
-          loadGeometry: () =>
-            feature.geometry.map(ring =>
-              ring.map(lnglat =>
-                lnglat2tilespace(tile_coord, layer.extent, lnglat)))
-        }
-      }
-    }])
-  )
-})
-
 export {
   lnglat2google,
   lnglat2googlefrac,
@@ -159,6 +138,5 @@ export {
   quadint2googlefrac,
   lng2frac,
   lat2frac,
-  lnglat2tilespace,
-  generate_tile
+  lnglat2tilespace
 }
