@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "vite",
-    "server": "nodemon server.js"
+    "server": "nodemon -e js server.js",
+    "ch": "docker run -it --rm --add-host host.docker.internal:host-gateway clickhouse/clickhouse-client --host host.docker.internal --port 9123"
   },
   "author": "",
   "license": "ISC",
@@ -18,12 +19,13 @@
     "cors": "^2.8.5",
     "deck.gl": "^8.9.19",
     "express": "^4.18.2",
-    "geojson-vt": "^3.2.1",
+    "global-mercator": "^3.1.0",
     "h3-js": "^4.1.0",
     "maplibre-gl": "^3.1.0",
     "modern-normalize": "^2.0.0",
     "odo-route": "^1.7.1",
     "page": "^1.11.6",
+    "papaparse": "^5.4.1",
     "pbf": "^3.2.1",
     "pmtiles": "^2.8.0",
     "react": "^18.2.0",
