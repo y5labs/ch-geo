@@ -120,35 +120,25 @@ const get_tile = async viewing => {
   return { groups: [], assets }
 }
 
-const data = await get_tile(lnglat2google([174.99867, -38.52861], 15)) // Would normally be x, y, z from url
-console.log(data)
+// const data = await get_tile(lnglat2google([174.99867, -38.52861], 15)) // Would normally be x, y, z from url
+console.log(lnglat2google([174.99867, -38.52861], 15))
+console.log(lnglat2google([174.99867, -38.52861], 14))
+console.log(lnglat2google([174.99867, -38.52861], 13))
+console.log(lnglat2google([174.99867, -38.52861], 12))
+console.log(lnglat2google([174.99867, -38.52861], 11))
 
+const app = express()
+app.options('*', cors({ origin: true }))
+app.use(cors({ origin: true }))
+app.use(compression())
+app.enable('trust proxy')
 
-// const app = express()
-// app.options('*', cors({ origin: true }))
-// app.use(cors({ origin: true }))
-// app.use(compression())
-// app.enable('trust proxy')
+app.get('/data/:z/:x/:y.json', async (req, res) => {
+  const { x, y, z } = req.params
+  res.send(await get_tile([x, y, z].map(Number)))
+})
 
-// app.get('/data/:z/:x/:y.mvt', async (req, res) => {
-//   const { x, y, z } = req.params
-//   const zxy = [x, y, z].map(Number)
-//   const feature_collection = {
-//     type: 'FeatureCollection',
-//     features: []
-//   }
-//   const tile_res = fromGeojsonVt(
-//     { geojsonLayer: tovt(feature_collection).getTile(...zxy) },
-//     { version: 2 })
-//   res
-//     .setHeader(
-//       'Content-Type',
-//       'application/x-protobuf'
-//     )
-//     .status(200).send(tile_res)
-// })
-
-// const port = process.env.EXPRESS_PORT ?? 8080
-// app.listen(port, () => {
-//   console.log(`Listening on ${port}...`)
-// })
+const port = process.env.EXPRESS_PORT ?? 8080
+app.listen(port, () => {
+  console.log(`Listening on ${port}...`)
+})
