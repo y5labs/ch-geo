@@ -4,72 +4,34 @@ import compression from 'compression'
 import cors from 'cors'
 import fs from 'fs/promises'
 import papa from 'papaparse'
-import gm from 'global-mercator'
+import {
+  lnglat2quadint,
+  google2quadint,
+  zoom2quadint,
+  zoom2quadint_inv,
+  google2quadintrange
+} from './quadint.js'
 
-const quadkey2quadint = quadkey => {
-  let res = '0b'
-  for (let i = 0; i < 32; i++) {
-    if (i >= quadkey.length) {
-      res += '00'
-      continue
-    }
-    const quat = quadkey.charAt(i)
-    if (quat == '0') res += '00'
-    else if (quat == '1') res += '01'
-    else if (quat == '2') res += '10'
-    else if (quat == '3') res += '11'
-  }
-  return BigInt(res)
-}
-
-const zoom2quadint = zoom => {
-  let res = '0b'
-  for (let i = 0; i < 32; i++) {
-    if (i > zoom - 1) {
-      res += '11'
-      continue
-    }
-    res += '00'
-  }
-  return BigInt(res)
-}
-
-const lnglat2quadint = lnglat => {
-  const tile = gm.lngLatToGoogle(location, 32)
-  const quadkey = gm.googleToQuadkey(tile)
-  const quadint = quadkey2quadint(quadkey)
-  return quadint
-}
-
-const google2quadint = tile => {
-  const quadkey = gm.googleToQuadkey(tile)
-  const quadint = quadkey2quadint(quadkey)
-  return quadint
-}
+const group_depth = 3
 
 const location = [174.99867, -38.52861]
 const tile_viewing = [4136034, 2584284, 22]
-
-const quadint = lnglat2quadint(location)
-
 // tile_viewing[0] += 1
-const quadint_low = google2quadint(tile_viewing)
-const quadint_zoom = zoom2quadint(tile_viewing[2])
-const quadint_high = quadint_low + quadint_zoom
+const quadint = lnglat2quadint(location)
+const quadintrange = google2quadintrange(tile_viewing)
+const groupby = zoom2quadint_inv(tile_viewing[2] + group_depth)
 
 console.log({
   location,
   tile_viewing,
   quadint,
-  quadint_zoom,
-  quadint_low,
-  quadint_high
+  quadintrange
 })
 console.log(quadint.toString(2).padStart(64, '0'))
-console.log(quadint_zoom.toString(2).padStart(64, '0'))
-console.log(quadint_low.toString(2).padStart(64, '0'))
-console.log(quadint_high.toString(2).padStart(64, '0'))
-console.log(quadint >= quadint_low && quadint < quadint_high)
+console.log(quadintrange[0].toString(2).padStart(64, '0'))
+console.log(quadintrange[1].toString(2).padStart(64, '0'))
+console.log(groupby.toString(2).padStart(64, '0'))
+console.log(quadint >= quadintrange[0] && quadint <= quadintrange[1])
 
 // https://www.npmjs.com/package/@high-u/quadkeytools
 // https://labs.mapbox.com/what-the-tile/
