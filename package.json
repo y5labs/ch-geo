@@ -7,6 +7,7 @@
   "scripts": {
     "start": "vite",
     "server": "nodemon -e js server.js",
+    "scratch": "nodemon -e js scratch.js",
     "ch": "docker run -it --rm --add-host host.docker.internal:host-gateway clickhouse/clickhouse-client --host host.docker.internal --port 9123"
   },
   "author": "",

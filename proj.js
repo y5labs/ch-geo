@@ -2,6 +2,9 @@ import gm from 'global-mercator'
 
 const lnglat2google = gm.lngLatToGoogle
 const lnglat2googlefrac = gm.pointToTileFraction
+const google2bbox = gm.googleToBBox
+const google2quadkey = gm.googleToQuadkey
+const quadkey2google = gm.quadkeyToGoogle
 
 const quadkey2quadint = quadkey => {
   let res = '0b'
@@ -114,7 +117,7 @@ const googlefrac2vecxy = (xyz, origin_xyz, extent) =>
 
 const vecxy2obj = xy => ({ x: xy[0], y: xy[1] })
 
-const generate_tile = (tile_coord, layers) => ({
+const generatevectortile = layers => ({
   layers: Object.fromEntries(
     layers.map(layer => [layer.name, {
       ...layer,
@@ -134,6 +137,9 @@ const generate_tile = (tile_coord, layers) => ({
 export {
   lnglat2google,
   lnglat2googlefrac,
+  google2bbox,
+  google2quadkey,
+  quadkey2google,
   quadkey2quadint,
   quadint2quadkey,
   lnglat2quadint,
@@ -142,7 +148,7 @@ export {
   zoom2quadint_inv,
   google2quadintrange,
   quadint2googlefrac,
-  generate_tile,
   googlefrac2vecxy,
-  vecxy2obj
+  vecxy2obj,
+  generatevectortile
 }

@@ -1,84 +1,33 @@
 import express from 'express'
 import compression from 'compression'
 import cors from 'cors'
-
-import fs from 'fs/promises'
-
-import chdb from './chdb.js'
-import import_assets from './assets.js'
-
-// TODO: Remove these deps when finished testing
-import { VectorTile } from '@mapbox/vector-tile'
-import pbf from 'pbf'
 import vtpbf from 'vt-pbf'
-
+import { PassThrough } from 'stream'
+import chdb from './chdb.js'
 import {
-  lnglat2google,
-  lnglat2googlefrac,
-  quadkey2quadint,
-  quadint2quadkey,
-  lnglat2quadint,
-  google2quadint,
-  zoom2quadint,
   zoom2quadint_inv,
   google2quadintrange,
   quadint2googlefrac,
-  generate_tile,
   googlefrac2vecxy,
-  vecxy2obj
+  vecxy2obj,
+  generatevectortile
 } from './proj.js'
 
-// https://labs.mapbox.com/what-the-tile/
+// import import_assets from './assets.js'
+const ch = await chdb()
+// await import_assets(ch)
 
 const extent = 4096
 const group_depth = 2 // e.g. cluster 16 in a tile 2 ^ group_depth ^ 2
 const depth_offset = extent / Math.pow(2, group_depth) / 2
 
-const viewing = [7, 4, 3]
-// TODO: Testing vector tile generation
-const tile = vtpbf(generate_tile(viewing, [
-  {
-    name: 'test',
-    extent,
-    features: [
-      {
-        id: 1,
-        type: 1,
-        properties: {
-          custom1: true,
-          custom2: 1,
-          custom3: 'true'
-        },
-        geometry: [
-          [
-            vecxy2obj(googlefrac2vecxy(lnglat2googlefrac([160, -10], viewing[2]), viewing, extent))
-          ]
-        ]
-      }
-    ]
-  }
-]))
-
-const tile_res1 = new VectorTile(new pbf(await fs.readFile('test.pbf')))
-console.log(tile_res1.layers)
-
-const tile_res2 = new VectorTile(new pbf(tile))
-console.log(tile_res2.layers)
-console.log(tile_res2.layers.test.feature(0).loadGeometry())
-console.log(tile_res2.layers.test.feature(0).toGeoJSON(...viewing))
-console.log(lnglat2googlefrac([160, -10], viewing[2]))
-console.log(googlefrac2vecxy(lnglat2googlefrac([160, -10], viewing[2]), viewing, extent))
-
-// await import_assets()
-
-const ch = await chdb()
-
-const get_tile = async viewing => {
+const get_tile_data = async viewing => {
   const quadintrange = google2quadintrange(viewing)
   const groupby = zoom2quadint_inv(viewing[2] + group_depth)
+  const quadint2vecxy = qi =>
+    googlefrac2vecxy(quadint2googlefrac(qi, viewing[2]), viewing, extent)
 
-  // Cluster
-  const groups = await ch.query(`
+  const asset_groups = await ch.query(`
     select
       bitAnd(quadint, ${groupby}) AS quadint_g,
       count(1) as count,
@@ -89,14 +38,13 @@ const get_tile = async viewing => {
       and quadint <= ${quadintrange[1]}
     group by quadint_g
     `).toPromise()
-  let total = groups.reduce((acc, g) => acc + g.count, 0)
+  let total = asset_groups.reduce((acc, g) => acc + g.count, 0)
   if (total > 100) {
-    for (const g of groups)
-      g.xy = googlefrac2vecxy(quadint2googlefrac(g.quadint_g, viewing[2]), viewing, extent).map(v => v + depth_offset)
-    return { groups, assets: [] }
+    for (const g of asset_groups)
+      g.xy = quadint2vecxy(g.quadint_g).map(v => v + depth_offset)
+    return { asset_groups, assets: [] }
   }
 
-  // Get all assets in a location
   const assets = await ch.query(`
     select *
     from asset
@@ -104,16 +52,9 @@ const get_tile = async viewing => {
       and quadint <= ${quadintrange[1]}
   `).toPromise()
   for (const a of assets)
-    a.xy = googlefrac2vecxy(quadint2googlefrac(a.quadint, viewing[2]), viewing, extent)
-  return { groups: [], assets }
+    a.xy = quadint2vecxy(a.quadint)
+  return { asset_groups: [], assets }
 }
-
-// const data = await get_tile(lnglat2google([174.99867, -38.52861], 15)) // Would normally be x, y, z from url
-// console.log(lnglat2google([174.99867, -38.52861], 15))
-// console.log(lnglat2google([174.99867, -38.52861], 14))
-// console.log(lnglat2google([174.99867, -38.52861], 13))
-// console.log(lnglat2google([174.99867, -38.52861], 12))
-// console.log(lnglat2google([174.99867, -38.52861], 11))
 
 const app = express()
 app.options('*', cors({ origin: true }))
@@ -123,12 +64,45 @@ app.enable('trust proxy')
 
 app.get('/data/:z/:x/:y.json', async (req, res) => {
   const { x, y, z } = req.params
-  res.send(await get_tile([x, y, z].map(Number)))
+  res.send(await get_tile_data([x, y, z].map(Number)))
 })
 
 app.get('/data/:z/:x/:y.pbf', async (req, res) => {
   const { x, y, z } = req.params
-  res.send(await get_tile([x, y, z].map(Number)))
+  const { asset_groups, assets } = await get_tile_data([x, y, z].map(Number))
+  const tile = generatevectortile([
+    {
+      name: 'asset_groups',
+      extent,
+      features: asset_groups.map(g => ({
+        type: 1,
+        properties: {
+          max_condition_score: g.max_condition_score,
+          min_condition_score: g.min_condition_score
+        },
+        geometry: [[vecxy2obj(g.xy)]]
+      }))
+    },
+    {
+      name: 'assets',
+      extent,
+      features: assets.map(a => ({
+        type: 1,
+        properties: {
+          id: a.id,
+          name: a.name,
+          description: a.description,
+          current_condition_score: a.current_condition_score
+        },
+        geometry: [[vecxy2obj(a.xy)]]
+      }))
+    }
+  ])
+  const tile_data = vtpbf(tile)
+  const rs = new PassThrough()
+  rs.end(tile_data)
+  res.setHeader('Content-Type', 'application/x-protobuf')
+  rs.pipe(res)
 })
 
 const port = process.env.EXPRESS_PORT ?? 8080
