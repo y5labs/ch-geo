@@ -3,6 +3,6 @@
 [What the tile?](https://labs.mapbox.com/what-the-tile/)
 
 ## Todo
-- validate mvt tiles
+- custom tiles render in Maplibre
 - implement into AA (epic)
 - basemap design customisation to match AA
