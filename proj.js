@@ -109,21 +109,27 @@ const quadint2googlefrac = (quadint, z) => {
   return [x, y, z]
 }
 
-const lng2frac = x => x / 360 + 0.5
+const googlefrac2vecxy = (xyz, origin_xyz, extent) =>
+  xyz.slice(0, 2).map((v, i) => Math.trunc((v - origin_xyz[i]) * extent))
 
-const lat2frac = y => {
-  const sin = Math.sin(y * Math.PI / 180)
-  const y2 = 0.5 - 0.25 * Math.log((1 + sin) / (1 - sin)) / Math.PI
-  return y2 < 0 ? 0 : y2 > 1 ? 1 : y2
-}
+const vecxy2obj = xy => ({ x: xy[0], y: xy[1] })
 
-const lnglat2tilespace = ([x, y, z], extent, lnglat) => {
-  const z2 = 1 << z
-  return {
-    x: Math.round(extent * (lng2frac(lnglat[0]) * z2 - x)),
-    y: Math.round(extent * (lat2frac(lnglat[1]) * z2 - y))
-  }
-}
+const generate_tile = (tile_coord, layers) => ({
+  layers: Object.fromEntries(
+    layers.map(layer => [layer.name, {
+      ...layer,
+      version: 2,
+      length: layer.features.length,
+      feature: i => {
+        const feature = layer.features[i]
+        return {
+          ...feature,
+          loadGeometry: () => feature.geometry
+        }
+      }
+    }])
+  )
+})
 
 export {
   lnglat2google,
@@ -136,7 +142,7 @@ export {
   zoom2quadint_inv,
   google2quadintrange,
   quadint2googlefrac,
-  lng2frac,
-  lat2frac,
-  lnglat2tilespace
+  generate_tile,
+  googlefrac2vecxy,
+  vecxy2obj
 }

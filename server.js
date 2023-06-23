@@ -2,6 +2,8 @@ import express from 'express'
 import compression from 'compression'
 import cors from 'cors'
 
+import fs from 'fs/promises'
+
 import chdb from './chdb.js'
 import import_assets from './assets.js'
 
@@ -21,63 +23,51 @@ import {
   zoom2quadint_inv,
   google2quadintrange,
   quadint2googlefrac,
-  lng2frac,
-  lat2frac,
-  lnglat2tilespace
+  generate_tile,
+  googlefrac2vecxy,
+  vecxy2obj
 } from './proj.js'
 
 // https://labs.mapbox.com/what-the-tile/
 
 const extent = 4096
-const group_depth = 2 // e.g. cluster 16 in a tile
+const group_depth = 2 // e.g. cluster 16 in a tile 2 ^ group_depth ^ 2
 const depth_offset = extent / Math.pow(2, group_depth) / 2
 
-// const generate_tile = (tile_coord, layers) => vtpbf({
-//   layers: Object.fromEntries(
-//     layers.map(layer => [layer.name, {
-//       ...layer,
-//       version: 2,
-//       length: layer.features.length,
-//       feature: i => {
-//         const feature = layer.features[i]
-//         return {
-//           ...feature,
-//           loadGeometry: () =>
-//             feature.geometry.map(ring =>
-//               ring.map(lnglat =>
-//                 lnglat2tilespace(tile_coord, layer.extent, lnglat))) // TODO: remove this because we'd already be in tilespace
-//         }
-//       }
-//     }])
-//   )
-// })
+const viewing = [7, 4, 3]
+// TODO: Testing vector tile generation
+const tile = vtpbf(generate_tile(viewing, [
+  {
+    name: 'test',
+    extent,
+    features: [
+      {
+        id: 1,
+        type: 1,
+        properties: {
+          custom1: true,
+          custom2: 1,
+          custom3: 'true'
+        },
+        geometry: [
+          [
+            vecxy2obj(googlefrac2vecxy(lnglat2googlefrac([160, -10], viewing[2]), viewing, extent))
+          ]
+        ]
+      }
+    ]
+  }
+]))
 
-// // TODO: Testing vector tile generation
-// const tile = generate_tile([1, 0, 0], [
-//   {
-//     name: 'test',
-//     extent,
-//     features: [
-//       {
-//         id: 1,
-//         type: 1,
-//         properties: {
-//           custom1: true,
-//           custom2: 1,
-//           custom3: 'true'
-//         },
-//         geometry: [
-//           [
-//             [-45, 66.5]
-//           ]
-//         ]
-//       }
-//     ]
-//   }
-// ])
+const tile_res1 = new VectorTile(new pbf(await fs.readFile('test.pbf')))
+console.log(tile_res1.layers)
 
-// const tile_res = new VectorTile(new pbf(tile))
-// console.log(tile_res.layers.test.feature(0).toGeoJSON(1, 0, 0))
+const tile_res2 = new VectorTile(new pbf(tile))
+console.log(tile_res2.layers)
+console.log(tile_res2.layers.test.feature(0).loadGeometry())
+console.log(tile_res2.layers.test.feature(0).toGeoJSON(...viewing))
+console.log(lnglat2googlefrac([160, -10], viewing[2]))
+console.log(googlefrac2vecxy(lnglat2googlefrac([160, -10], viewing[2]), viewing, extent))
 
 // await import_assets()
 
@@ -102,8 +92,7 @@ const get_tile = async viewing => {
   let total = groups.reduce((acc, g) => acc + g.count, 0)
   if (total > 100) {
     for (const g of groups)
-      g.xy = quadint2googlefrac(g.quadint_g, viewing[2]).slice(0, 2)
-        .map((v, i) => Math.trunc((v - viewing[i]) * extent) + depth_offset)
+      g.xy = googlefrac2vecxy(quadint2googlefrac(g.quadint_g, viewing[2]), viewing, extent).map(v => v + depth_offset)
     return { groups, assets: [] }
   }
 
@@ -115,17 +104,16 @@ const get_tile = async viewing => {
       and quadint <= ${quadintrange[1]}
   `).toPromise()
   for (const a of assets)
-    a.xy = quadint2googlefrac(a.quadint, viewing[2]).slice(0, 2)
-      .map((v, i) => Math.trunc((v - viewing[i]) * extent))
+    a.xy = googlefrac2vecxy(quadint2googlefrac(a.quadint, viewing[2]), viewing, extent)
   return { groups: [], assets }
 }
 
 // const data = await get_tile(lnglat2google([174.99867, -38.52861], 15)) // Would normally be x, y, z from url
-console.log(lnglat2google([174.99867, -38.52861], 15))
-console.log(lnglat2google([174.99867, -38.52861], 14))
-console.log(lnglat2google([174.99867, -38.52861], 13))
-console.log(lnglat2google([174.99867, -38.52861], 12))
-console.log(lnglat2google([174.99867, -38.52861], 11))
+// console.log(lnglat2google([174.99867, -38.52861], 15))
+// console.log(lnglat2google([174.99867, -38.52861], 14))
+// console.log(lnglat2google([174.99867, -38.52861], 13))
+// console.log(lnglat2google([174.99867, -38.52861], 12))
+// console.log(lnglat2google([174.99867, -38.52861], 11))
 
 const app = express()
 app.options('*', cors({ origin: true }))
@@ -134,6 +122,11 @@ app.use(compression())
 app.enable('trust proxy')
 
 app.get('/data/:z/:x/:y.json', async (req, res) => {
+  const { x, y, z } = req.params
+  res.send(await get_tile([x, y, z].map(Number)))
+})
+
+app.get('/data/:z/:x/:y.pbf', async (req, res) => {
   const { x, y, z } = req.params
   res.send(await get_tile([x, y, z].map(Number)))
 })

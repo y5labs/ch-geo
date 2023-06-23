@@ -5,10 +5,6 @@ import maplibregl from 'maplibre-gl'
 import linz_aerial from './linz_aerial.json'
 import linz_topographic from './linz_topographic.json'
 
-import tovt from 'geojson-vt'
-import { fromGeojsonVt } from 'vt-pbf'
-import { cellToBoundary, cellToLatLng } from 'h3-js'
-
 export default () => {
   const [viewState, setViewState] = useState({
     latitude: -37.7728,
