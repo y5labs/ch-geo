@@ -338,7 +338,9 @@ const styles = [
 
 const MapView = () => {
   const [popupDetails, setPopupDetails] = useState()
+  const [oneTime, setOneTime] = useState(true)
   const [styleIndex, setStyleIndex] = useState(0)
+  const [filters, setFilters] = useState({})
   const { map } = useMap()
 
   const [viewState, setViewState] = useState({
@@ -354,14 +356,21 @@ const MapView = () => {
   useEffect(() => {
     if (!map) return
     const load = async () => {
-      const bbox_req = await fetch('http://localhost:8080/bbox')
+      const bbox_req = await fetch(`http://localhost:8080/bbox?${new URLSearchParams(filters).toString()}`)
       const bbox = await bbox_req.json()
-      console.log(bbox)
-
-      map.fitBounds(bbox.lnglat, { duration: 0, padding: 10 });
+      const options = { padding: 40 }
+      if (oneTime) options.duration = 0
+      map.fitBounds(bbox.lnglat, options)
+      setOneTime(false)
     }
     load()
-  }, [map])
+  }, [oneTime, map, filters])
+
+  useEffect(() => {
+    setTimeout(() => {
+      setFilters(f => ({ ...f, location_id: 3313 }))
+    }, 2000)
+  }, [])
 
   return <Map
     id='map'
@@ -421,7 +430,7 @@ const MapView = () => {
       id='assets'
       type='vector'
       format='pbf'
-      tiles={['http://localhost:8080/tiles/{z}/{x}/{y}.pbf']}
+      tiles={[`http://localhost:8080/tiles/{z}/{x}/{y}.pbf?${new URLSearchParams(filters).toString()}`]}
     />
     <div
       style={{

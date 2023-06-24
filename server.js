@@ -21,7 +21,7 @@ const extent = 1024
 const group_depth = 6 // e.g. cluster 16 in a tile 2 ^ group_depth ^ 2
 const depth_offset = extent / Math.pow(2, group_depth) / 2
 
-const get_tile_data = async viewing => {
+const get_tile_data = async (viewing, filters) => {
   const quadintrange = google2quadintrange(viewing)
   const groupby = zoom2quadint_inv(viewing[2] + group_depth)
   const quadint2vecxy = qi =>
@@ -36,6 +36,7 @@ const get_tile_data = async viewing => {
       from asset
       where quadint >= ${quadintrange[0]}
         and quadint <= ${quadintrange[1]}
+        ${filters.location_id != null ? `and location_id = ${filters.location_id}` : ''}
       group by quadint_g
       `).toPromise()
     for (const g of asset_groups)
@@ -48,13 +49,14 @@ const get_tile_data = async viewing => {
     from asset
     where quadint >= ${quadintrange[0]}
       and quadint <= ${quadintrange[1]}
+      ${filters.location_id != null ? `and location_id = ${filters.location_id}` : ''}
   `).toPromise()
   for (const a of assets)
     a.xy = quadint2vecxy(a.quadint)
   return { asset_groups: [], assets }
 }
 
-const get_bbox = async () => {
+const get_bbox = async filters => {
   const [{ x_min, y_min, x_max, y_max }] = await ch.query(`
     select
       min(location_x) as x_min,
@@ -62,6 +64,8 @@ const get_bbox = async () => {
       max(location_x) as x_max,
       max(location_y) as y_max
     from asset
+    where true
+      ${filters.location_id != null ? `and location_id = ${filters.location_id}` : ''}
   `).toPromise()
   return {
     lnglat: [
@@ -77,18 +81,22 @@ app.use(cors({ origin: true }))
 app.use(compression())
 app.enable('trust proxy')
 
+const get_filters = req => ({
+  location_id: req.query.location_id ?? null
+})
+
 app.get('/bbox', async (req, res) => {
-  res.send(await get_bbox())
+  res.send(await get_bbox(get_filters(req)))
 })
 
 app.get('/tiles/:z/:x/:y.json', async (req, res) => {
   const { x, y, z } = req.params
-  res.send(await get_tile_data([x, y, z].map(Number)))
+  res.send(await get_tile_data([x, y, z].map(Number), get_filters(req)))
 })
 
 app.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
   const { x, y, z } = req.params
-  const { asset_groups, assets } = await get_tile_data([x, y, z].map(Number))
+  const { asset_groups, assets } = await get_tile_data([x, y, z].map(Number), get_filters(req))
   const tile = generatevectortile([
     {
       name: 'asset_groups',
