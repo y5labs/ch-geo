@@ -18,7 +18,7 @@ const ch = await chdb()
 // await import_assets(ch)
 
 const extent = 4096
-const group_depth = 2 // e.g. cluster 16 in a tile 2 ^ group_depth ^ 2
+const group_depth = 3 // e.g. cluster 16 in a tile 2 ^ group_depth ^ 2
 const depth_offset = extent / Math.pow(2, group_depth) / 2
 
 const get_tile_data = async viewing => {
@@ -30,9 +30,15 @@ const get_tile_data = async viewing => {
   const asset_groups = await ch.query(`
     select
       bitAnd(quadint, ${groupby}) AS quadint_g,
-      count(1) as count,
       max(current_condition_score) as max_condition_score,
-      min(current_condition_score) as min_condition_score
+      avg(current_condition_score) as avg_condition_score,
+      min(current_condition_score) as min_condition_score,
+      count() as count,
+      countIf(current_condition_score <= 0) as count_0,
+      countIf(current_condition_score > 0 and current_condition_score <= 25) as count_25,
+      countIf(current_condition_score > 25 and current_condition_score <= 50) as count_50,
+      countIf(current_condition_score > 50 and current_condition_score <= 75) as count_75,
+      countIf(current_condition_score > 75) as count_100
     from asset
     where quadint >= ${quadintrange[0]}
       and quadint <= ${quadintrange[1]}
@@ -62,12 +68,12 @@ app.use(cors({ origin: true }))
 app.use(compression())
 app.enable('trust proxy')
 
-app.get('/data/:z/:x/:y.json', async (req, res) => {
+app.get('/tiles/:z/:x/:y.json', async (req, res) => {
   const { x, y, z } = req.params
   res.send(await get_tile_data([x, y, z].map(Number)))
 })
 
-app.get('/data/:z/:x/:y.pbf', async (req, res) => {
+app.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
   const { x, y, z } = req.params
   const { asset_groups, assets } = await get_tile_data([x, y, z].map(Number))
   const tile = generatevectortile([
@@ -78,7 +84,13 @@ app.get('/data/:z/:x/:y.pbf', async (req, res) => {
         type: 1,
         properties: {
           max_condition_score: g.max_condition_score,
-          min_condition_score: g.min_condition_score
+          min_condition_score: g.min_condition_score,
+          count: g.count,
+          count_0: g.count_0 != 0 ? g.count_0 : null,
+          count_25: g.count_25 != 0 ? g.count_25 : null,
+          count_50: g.count_50 != 0 ? g.count_50 : null,
+          count_75: g.count_75 != 0 ? g.count_75 : null,
+          count_100: g.count_100 != 0 ? g.count_100 : null
         },
         geometry: [[vecxy2obj(g.xy)]]
       }))

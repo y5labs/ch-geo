@@ -1,85 +1,258 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useState } from 'react'
-import { Map, NavigationControl } from 'react-map-gl'
+import { Map, NavigationControl, Source, Layer } from 'react-map-gl'
 import maplibregl from 'maplibre-gl'
 import linz_aerial from './linz_aerial.json'
 import linz_topographic from './linz_topographic.json'
 
+const score_colours = [
+  '#000000',
+  '#FF2600',
+  '#FF8C00',
+  '#FFDA00',
+  '#95C500'
+]
+
 export default () => {
   const [viewState, setViewState] = useState({
-    latitude: -37.7728,
-    longitude: 175.2874,
-    zoom: 12,
-    bearing: 0.8,
-    pitch: 60
+    latitude: -38.580959820516135,
+    longitude: 175.23990528218496,
+    zoom: 9.640285348003506,
+    bearing: 0,
+    pitch: 38.50000000000001
   })
 
   return <Map
     {...viewState}
     mapLib={maplibregl}
     onMove={e => {
-      console.log(e.viewState)
-      setViewState(e.viewState)
+      // console.log(e.viewState)
+      setViewState({ ...e.viewState, pitch: 0 })
     }}
     mapStyle={linz_topographic}
   >
     <NavigationControl />
+    <Source
+      id='assets'
+      type='vector'
+      format='pbf'
+      tiles={['http://localhost:8080/tiles/{z}/{x}/{y}.pbf']}
+    />
+    {/* <Layer {...{
+      id: 'asset_groups_min',
+      source: 'assets',
+      'source-layer': 'asset_groups',
+      type: 'circle',
+      paint: {
+        'circle-pitch-alignment': 'map',
+        'circle-translate': [2.5, 2.5],
+        'circle-radius': 6,
+        'circle-color': {
+          'property': 'min_condition_score',
+          'stops': [
+            [0, score_colours[0]],
+            [1, score_colours[1]],
+            [25, score_colours[2]],
+            [50, score_colours[3]],
+            [75, score_colours[4]]
+          ]
+          },
+        'circle-stroke-color': '#333333',
+        'circle-stroke-width': 2
+      }
+    }} />
+    <Layer {...{
+      id: 'asset_groups_max',
+      source: 'assets',
+      'source-layer': 'asset_groups',
+      type: 'circle',
+      paint: {
+        'circle-pitch-alignment': 'map',
+        'circle-translate': [-2.5, -2.5],
+        'circle-radius': 6,
+        'circle-color': {
+          'property': 'max_condition_score',
+          'stops': [
+            [0, score_colours[0]],
+            [1, score_colours[1]],
+            [25, score_colours[2]],
+            [50, score_colours[3]],
+            [75, score_colours[4]]
+          ]
+          },
+        'circle-stroke-color': '#333333',
+        'circle-stroke-width': 2
+      }
+    }} /> */}
+    {/* <Layer {...{
+      id: 'asset_groups_count',
+      source: 'assets',
+      'source-layer': 'asset_groups',
+      type: 'symbol',
+      layout: {
+        'text-field': '{count}',
+        'text-font': ['Open Sans Bold'],
+        'text-size': 12
+      },
+      paint: {
+        'text-color': '#FFFFFF',
+        'text-halo-color': '#333333',
+        'text-halo-width': 2
+      }
+    }} /> */}
+    <TextLayer
+      {...{
+        id: 'asset_groups_count_0',
+        source: 'assets',
+        'source-layer': 'asset_groups'
+      }}
+      layout={{ 'text-field': '{count_0}' }}
+      paint={{
+        'text-translate': [-4, 20],
+        'text-translate-anchor': 'viewport'
+      }}
+    />
+    <CircleLayer
+      {...{
+        id: 'asset_groups_count_0_circle',
+        source: 'assets',
+        'source-layer': 'asset_groups',
+        filter: ['has', 'count_0']
+      }}
+      paint={{
+        'circle-translate': [4, 20],
+        'circle-color': score_colours[0]
+      }}
+    />
+    <TextLayer
+      {...{
+        id: 'asset_groups_count_25',
+        source: 'assets',
+        'source-layer': 'asset_groups'
+      }}
+      layout={{ 'text-field': '{count_25}' }}
+      paint={{
+        'text-translate': [-4, 10],
+        'text-translate-anchor': 'viewport'
+      }}
+    />
+    <CircleLayer
+      {...{
+        id: 'asset_groups_count_25_circle',
+        source: 'assets',
+        'source-layer': 'asset_groups',
+        filter: ['has', 'count_25']
+      }}
+      paint={{
+        'circle-translate': [4, 10],
+        'circle-color': score_colours[1]
+      }}
+    />
+    <TextLayer
+      {...{
+        id: 'asset_groups_count_50',
+        source: 'assets',
+        'source-layer': 'asset_groups'
+      }}
+      layout={{ 'text-field': '{count_50}' }}
+      paint={{
+        'text-translate': [-4, 0],
+        'text-translate-anchor': 'viewport'
+      }}
+    />
+    <CircleLayer
+      {...{
+        id: 'asset_groups_count_50_circle',
+        source: 'assets',
+        'source-layer': 'asset_groups',
+        filter: ['has', 'count_50']
+      }}
+      paint={{
+        'circle-translate': [4, 0],
+        'circle-color': score_colours[2]
+      }}
+    />
+    <TextLayer
+      {...{
+        id: 'asset_groups_count_75',
+        source: 'assets',
+        'source-layer': 'asset_groups'
+      }}
+      layout={{ 'text-field': '{count_75}' }}
+      paint={{
+        'text-translate': [-4, -10],
+        'text-translate-anchor': 'viewport'
+      }}
+    />
+    <CircleLayer
+      {...{
+        id: 'asset_groups_count_75_circle',
+        source: 'assets',
+        'source-layer': 'asset_groups',
+        filter: ['has', 'count_75']
+      }}
+      paint={{
+        'circle-translate': [4, -10],
+        'circle-color': score_colours[3]
+      }}
+    />
+    <TextLayer
+      {...{
+        id: 'asset_groups_count_100',
+        source: 'assets',
+        'source-layer': 'asset_groups'
+      }}
+      layout={{ 'text-field': '{count_100}' }}
+      paint={{
+        'text-translate': [-4, -20],
+        'text-translate-anchor': 'viewport'
+      }}
+    />
+    <CircleLayer
+      {...{
+        id: 'asset_groups_count_100_circle',
+        source: 'assets',
+        'source-layer': 'asset_groups',
+        filter: ['has', 'count_100']
+      }}
+      paint={{
+        'circle-translate': [4, -20],
+        'circle-color': score_colours[4]
+      }}
+    />
   </Map>
 }
 
-// map.addSource('test-source', {
-//   tiles: ['h3tiles://cryptic-temple-41553.herokuapp.com/{z}/{x}/{y}.h3t'],
-//   // minzoom: 14,
-//   // maxzoom: 14,
-//   type: 'vector',
-//   format: 'pbf',
-//   promoteId: 'h3id'
-// })
+const TextLayer = ({ layout, paint, ...props }) => <Layer {...{
+  type: 'symbol',
+  layout: {
+    'text-ignore-placement': true,
+    'text-anchor': 'right',
+    'text-font': ['Open Sans Bold'],
+    'text-size': 11,
+    ...layout
+  },
+  paint: {
+    'text-color': '#ffffff',
+    'text-halo-color': '#000000',
+    'text-halo-width': 1,
+    ...paint
+  },
+  ...props
+}} />
 
-// map.addLayer({
-//   "id": 'test-layer',
-//   "type": 'fill',
-//   "source": 'test-source',
-//   "source-layer": 'test-layer',
-//   "paint": {
-//     "fill-color": {
-//       "property": 'value',
-//       "stops": [
-//         [1,"#fdc7b7"],
-//         [2,"#fe9699"],
-//         [3,"#f16580"],
-//         [4,"#d9316c"],
-//         [5,"#a71f65"],
-//         [6,"#760e5d"],
-//         [7,"#430254"]
-//       ]
-//       },
-//     "fill-opacity": 0.25,
-//   }
-// });
-
-// map.addSource('mapillary', {
-//   type: 'vector',
-//   tiles: ['https://tiles.mapillary.com/maps/vtp/mly1_public/2/{z}/{x}/{y}'],
-//   minzoom: 6,
-//   maxzoom: 14
-// })
-
-// map.addLayer(
-//   {
-//     id: 'mapillary',
-//     type: 'line',
-//     source: 'mapillary',
-//     'source-layer': 'sequence',
-//     layout: {
-//       'line-cap': 'round',
-//       'line-join': 'round'
-//     },
-//     paint: {
-//       'line-opacity': 0.6,
-//       'line-color': 'rgb(53, 175, 109)',
-//       'line-width': 2
-//     }
-//   },
-//   'water_name_line'
-// )
+const CircleLayer = ({ layout = {}, paint, ...props }) => <Layer {...{
+  type: 'circle',
+  layout,
+  paint: {
+    'circle-pitch-alignment': 'viewport',
+    'circle-translate-anchor': 'viewport',
+    'circle-pitch-scale': 'viewport',
+    'circle-radius': 4,
+    'circle-color': '#ffffff',
+    'circle-stroke-color': '#000000',
+    'circle-stroke-width': 1,
+    ...paint
+  },
+  ...props
+}} />
