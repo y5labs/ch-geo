@@ -1,5 +1,5 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Map,
   NavigationControl,
@@ -346,10 +346,22 @@ const MapView = () => {
     longitude: 175.23990528218496,
     zoom: 9.640285348003506,
     bearing: 0,
-    pitch: 38.50000000000001
+    pitch: 0 // 38.50000000000001
   })
 
   const MapContent = styles[styleIndex].mapContent
+
+  useEffect(() => {
+    if (!map) return
+    const load = async () => {
+      const bbox_req = await fetch('http://localhost:8080/bbox')
+      const bbox = await bbox_req.json()
+      console.log(bbox)
+
+      map.fitBounds(bbox.lnglat, { duration: 0, padding: 10 });
+    }
+    load()
+  }, [map])
 
   return <Map
     id='map'

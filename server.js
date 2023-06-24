@@ -54,11 +54,32 @@ const get_tile_data = async viewing => {
   return { asset_groups: [], assets }
 }
 
+const get_bbox = async () => {
+  const [{ x_min, y_min, x_max, y_max }] = await ch.query(`
+    select
+      min(location_x) as x_min,
+      min(location_y) as y_min,
+      max(location_x) as x_max,
+      max(location_y) as y_max
+    from asset
+  `).toPromise()
+  return {
+    lnglat: [
+      [y_min, x_min],
+      [y_max, x_max]
+    ]
+  }
+}
+
 const app = express()
 app.options('*', cors({ origin: true }))
 app.use(cors({ origin: true }))
 app.use(compression())
 app.enable('trust proxy')
+
+app.get('/bbox', async (req, res) => {
+  res.send(await get_bbox())
+})
 
 app.get('/tiles/:z/:x/:y.json', async (req, res) => {
   const { x, y, z } = req.params

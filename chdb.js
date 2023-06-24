@@ -42,6 +42,10 @@ export default async () => {
       index asset_owner_id_idx (owner_id)
         type bloom_filter granularity 3,
       index asset_quadint_idx (quadint)
+        type minmax,
+      index asset_location_x_idx (location_x)
+        type minmax,
+      index asset_location_y_idx (location_y)
         type minmax
     )
     engine = ReplacingMergeTree
