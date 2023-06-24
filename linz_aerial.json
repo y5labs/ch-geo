@@ -11,5 +11,6 @@
   },
   "layers": [
     { "id": "basemaps-aerial", "type": "raster", "source": "basemaps-aerial" }
-  ]
+  ],
+  "glyphs": "https://basemaps.linz.govt.nz/v1/fonts/{fontstack}/{range}.pbf"
 }

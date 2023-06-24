@@ -45,7 +45,7 @@ const get_tile_data = async viewing => {
     group by quadint_g
     `).toPromise()
   let total = asset_groups.reduce((acc, g) => acc + g.count, 0)
-  if (total > 100) {
+  if (total > 10000) {
     for (const g of asset_groups)
       g.xy = quadint2vecxy(g.quadint_g).map(v => v + depth_offset)
     return { asset_groups, assets: [] }

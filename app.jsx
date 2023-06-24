@@ -29,6 +29,7 @@ export default () => {
       // console.log(e.viewState)
       setViewState({ ...e.viewState, pitch: 0 })
     }}
+    // mapStyle={linz_aerial}
     mapStyle={linz_topographic}
   >
     <NavigationControl />
@@ -56,7 +57,7 @@ export default () => {
             [50, score_colours[3]],
             [75, score_colours[4]]
           ]
-          },
+        },
         'circle-stroke-color': '#333333',
         'circle-stroke-width': 2
       }
@@ -79,7 +80,7 @@ export default () => {
             [50, score_colours[3]],
             [75, score_colours[4]]
           ]
-          },
+        },
         'circle-stroke-color': '#333333',
         'circle-stroke-width': 2
       }
@@ -100,6 +101,29 @@ export default () => {
         'text-halo-width': 2
       }
     }} /> */}
+    <Layer {...{
+      id: 'assets',
+      source: 'assets',
+      'source-layer': 'assets',
+      type: 'circle',
+      paint: {
+        'circle-pitch-alignment': 'map',
+        'circle-radius': 3,
+        'circle-color': {
+          'property': 'current_condition_score',
+          'stops': [
+            [0, score_colours[0]],
+            [1, score_colours[1]],
+            [25, score_colours[2]],
+            [50, score_colours[3]],
+            [75, score_colours[4]]
+          ]
+        },
+        'circle-stroke-color': '#000000',
+        'circle-stroke-opacity': 0.5,
+        'circle-stroke-width': 1
+      }
+    }} />
     <TextLayer
       {...{
         id: 'asset_groups_count_0',
