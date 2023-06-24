@@ -5124,7 +5124,7 @@
           ]
         },
         "icon-image": "landfill_pnt",
-        "text-font": ["Roboto Condensed Italic"]
+        "text-font": ["Roboto Bold Italic"]
       },
       "paint": {
         "text-halo-blur": 0.5,

@@ -18,7 +18,7 @@ const ch = await chdb()
 // await import_assets(ch)
 
 const extent = 4096
-const group_depth = 3 // e.g. cluster 16 in a tile 2 ^ group_depth ^ 2
+const group_depth = 5 // e.g. cluster 16 in a tile 2 ^ group_depth ^ 2
 const depth_offset = extent / Math.pow(2, group_depth) / 2
 
 const get_tile_data = async viewing => {
@@ -47,7 +47,7 @@ const get_tile_data = async viewing => {
   let total = asset_groups.reduce((acc, g) => acc + g.count, 0)
   if (total > 10000) {
     for (const g of asset_groups)
-      g.xy = quadint2vecxy(g.quadint_g).map(v => v + depth_offset)
+      g.xy = quadint2vecxy(g.quadint_g)
     return { asset_groups, assets: [] }
   }
 
@@ -84,6 +84,7 @@ app.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
         type: 1,
         properties: {
           max_condition_score: g.max_condition_score,
+          avg_condition_score: g.avg_condition_score,
           min_condition_score: g.min_condition_score,
           count: g.count,
           count_0: g.count_0 != 0 ? g.count_0 : null,
@@ -92,8 +93,32 @@ app.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
           count_75: g.count_75 != 0 ? g.count_75 : null,
           count_100: g.count_100 != 0 ? g.count_100 : null
         },
-        geometry: [[vecxy2obj(g.xy)]]
+        geometry: [[vecxy2obj(g.xy.map(v => v + depth_offset))]]
       }))
+    },
+    {
+      name: 'asset_heatmap',
+      extent,
+      features: asset_groups.map(g => {
+        const [x, y] = g.xy
+        const d = depth_offset * 2
+        return {
+          type: 3,
+          properties: {
+            max_condition_score: g.max_condition_score,
+            avg_condition_score: g.avg_condition_score,
+            min_condition_score: g.min_condition_score,
+            count: g.count
+          },
+          geometry: [[
+            { x, y },
+            { x: x + d, y },
+            { x: x + d, y: y + d },
+            { x, y: y + d },
+            { x, y }
+          ]]
+        }
+    })
     },
     {
       name: 'assets',

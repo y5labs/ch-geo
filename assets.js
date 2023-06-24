@@ -1,5 +1,8 @@
 import fs from 'fs/promises'
 import papa from 'papaparse'
+import {
+  lnglat2quadint
+} from './proj.js'
 
 export default async ch => {
   // TODO: Insert assets
@@ -45,7 +48,7 @@ export default async ch => {
     const location_y = parseFloatOrNull(a.location_y)
     const quadint = location_x != null && location_y != null
       ? lnglat2quadint([location_y, location_x])
-      : null
+      : 0
     await insert_asset([
       a.id,
       a.name,
