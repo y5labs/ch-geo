@@ -5,14 +5,45 @@ import {
   NavigationControl,
   Popup,
   FullscreenControl,
+  ScaleControl,
   Source,
   Layer,
   MapProvider,
-  useMap
+  useMap,
+  useControl
 } from 'react-map-gl'
 import maplibregl from 'maplibre-gl'
 import linz_aerial from './linz_aerial.json'
 import linz_topographic from './linz_topographic.json'
+
+// const HomeControl = props => {
+//   useControl(() => new MapboxDraw(props), {
+//     position: props.position
+//   })
+//   return null
+// }
+
+// const homePosition = {
+//   center: [144, -37],
+// };
+
+// function addHomeButton(map) {
+//   class HomeButton {
+//     onAdd(map) {
+//       const div = document.createElement("div");
+//       div.className = "mapboxgl-ctrl mapboxgl-ctrl-group";
+//       div.innerHTML = `<button>
+//         <svg focusable="false" viewBox="0 0 24 24" aria-hidden="true" style="font-size: 20px;"><title>Reset map</title><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>
+//         </button>`;
+//       div.addEventListener("contextmenu", (e) => e.preventDefault());
+//       div.addEventListener("click", () => map.flyTo(homePosition));
+
+//       return div;
+//     }
+//   }
+//   const homeButton = new HomeButton();
+//   map.addControl(homeButton, 'bottom-right');
+// }
 
 const score_colours = [
   '#000000',
@@ -39,37 +70,6 @@ const AssetGroupCounts = props => <Layer {...{
   },
   ...props
 }} />
-
-// // Create a popup, but don't add it to the map yet.
-// var popup = new maplibregl.Popup({
-//   closeButton: false,
-//   closeOnClick: false
-// });
-
-// map.on('mouseenter', 'places', function (e) {
-//   // Change the cursor style as a UI indicator.
-//   map.getCanvas().style.cursor = 'pointer';
-
-//   const coordinates = e.features[0].geometry.coordinates.slice()
-//   const name = e.features[0].properties.name
-//   const description = e.features[0].properties.description
-
-//   // Ensure that if the map is zoomed out such that multiple
-//   // copies of the feature are visible, the popup appears
-//   // over the copy being pointed to.
-//   while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-//     coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-//   }
-
-//   // Populate the popup and set its coordinates
-//   // based on the feature found.
-//   popup.setLngLat(coordinates).setHTML(description).addTo(map);
-// });
-
-// map.on('mouseleave', 'places', function () {
-//   map.getCanvas().style.cursor = '';
-//   popup.remove();
-// });
 
 const Assets = props => <Layer {...{
   id: 'assets',
@@ -311,10 +311,12 @@ const MapView = () => {
       const coord = feature.geometry.coordinates.slice()
       while (Math.abs(e.lngLat.lng - coord[0]) > 180)
         coord[0] += e.lngLat.lng > coord[0] ? 360 : -360
-      const { name, description } = feature.properties
+      const { id, name, description, current_condition_score } = feature.properties
       setPopupDetails({
+        id,
         coord,
         name,
+        current_condition_score,
         description,
         href: `https://www.google.com/maps/search/?api=1&query=${coord[1]},${coord[0]}`
       })
@@ -347,6 +349,15 @@ const MapView = () => {
     </Popup>}
     {/* <NavigationControl /> */}
     <FullscreenControl />
+    <ScaleControl />
+    {/* <HomeControl
+      position='top-right'
+      displayControlsDefault={false}
+      controls={{
+        polygon: true,
+        trash: true
+      }}
+    /> */}
     <Source
       id='assets'
       type='vector'
@@ -364,8 +375,8 @@ const MapView = () => {
     {/* <AssetGroupCounts /> */}
     {/* <AssetGroupConditionCounts /> */}
     {/* <AssetGroupHeatmap1 /> */}
-    <AssetGroupHeatmap2 />
-    {/* <AssetGroupHeatmap3 /> */}
+    {/* <AssetGroupHeatmap2 /> */}
+    <AssetGroupHeatmap3 />
   </Map>
 }
 
