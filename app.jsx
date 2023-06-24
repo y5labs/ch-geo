@@ -9,41 +9,11 @@ import {
   Source,
   Layer,
   MapProvider,
-  useMap,
-  useControl
+  useMap
 } from 'react-map-gl'
 import maplibregl from 'maplibre-gl'
 import linz_aerial from './linz_aerial.json'
 import linz_topographic from './linz_topographic.json'
-
-// const HomeControl = props => {
-//   useControl(() => new MapboxDraw(props), {
-//     position: props.position
-//   })
-//   return null
-// }
-
-// const homePosition = {
-//   center: [144, -37],
-// };
-
-// function addHomeButton(map) {
-//   class HomeButton {
-//     onAdd(map) {
-//       const div = document.createElement("div");
-//       div.className = "mapboxgl-ctrl mapboxgl-ctrl-group";
-//       div.innerHTML = `<button>
-//         <svg focusable="false" viewBox="0 0 24 24" aria-hidden="true" style="font-size: 20px;"><title>Reset map</title><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>
-//         </button>`;
-//       div.addEventListener("contextmenu", (e) => e.preventDefault());
-//       div.addEventListener("click", () => map.flyTo(homePosition));
-
-//       return div;
-//     }
-//   }
-//   const homeButton = new HomeButton();
-//   map.addControl(homeButton, 'bottom-right');
-// }
 
 const score_colours = [
   '#000000',
@@ -52,6 +22,41 @@ const score_colours = [
   '#FFDA00',
   '#95C500'
 ]
+
+const TextLayer = ({ layout, paint, ...props }) => <Layer {...{
+  type: 'symbol',
+  layout: {
+    'text-ignore-placement': true,
+    'text-pitch-alignment': 'map',
+    'text-anchor': 'right',
+    'text-font': ['Open Sans Bold'],
+    'text-size': 11,
+    ...layout
+  },
+  paint: {
+    'text-color': '#ffffff',
+    'text-halo-color': '#000000',
+    'text-halo-width': 1,
+    ...paint
+  },
+  ...props
+}} />
+
+const CircleLayer = ({ layout = {}, paint, ...props }) => <Layer {...{
+  type: 'circle',
+  layout,
+  paint: {
+    'circle-pitch-alignment': 'map',
+    'circle-translate-anchor': 'viewport',
+    'circle-pitch-scale': 'viewport',
+    'circle-radius': 3,
+    'circle-color': '#ffffff',
+    'circle-stroke-color': '#000000',
+    'circle-stroke-width': 1,
+    ...paint
+  },
+  ...props
+}} />
 
 const AssetGroupCounts = props => <Layer {...{
   id: 'asset_groups_count',
@@ -69,30 +74,6 @@ const AssetGroupCounts = props => <Layer {...{
     'text-halo-width': 2
   },
   ...props
-}} />
-
-const Assets = props => <Layer {...{
-  id: 'assets',
-  source: 'assets',
-  'source-layer': 'assets',
-  type: 'circle',
-  paint: {
-    'circle-pitch-alignment': 'map',
-    'circle-radius': 3,
-    'circle-color': {
-      'property': 'current_condition_score',
-      'stops': [
-        [0, score_colours[0]],
-        [1, score_colours[1]],
-        [25, score_colours[2]],
-        [50, score_colours[3]],
-        [75, score_colours[4]]
-      ]
-    },
-    'circle-stroke-color': '#000000',
-    'circle-stroke-opacity': 0.5,
-    'circle-stroke-width': 1
-  }
 }} />
 
 const AssetGroupConditionCounts = props => <>
@@ -264,7 +245,31 @@ const AssetGroupHeatmap2 = props => <Layer {...{
   ...props
 }} />
 
-const AssetGroupHeatmap3 = props => <Layer {...{
+const Assets = props => <Layer {...{
+  id: 'assets',
+  source: 'assets',
+  'source-layer': 'assets',
+  type: 'circle',
+  paint: {
+    'circle-pitch-alignment': 'map',
+    'circle-radius': 3,
+    'circle-color': {
+      'property': 'current_condition_score',
+      'stops': [
+        [0, score_colours[0]],
+        [1, score_colours[1]],
+        [25, score_colours[2]],
+        [50, score_colours[3]],
+        [75, score_colours[4]]
+      ]
+    },
+    'circle-stroke-color': '#000000',
+    'circle-stroke-opacity': 0.5,
+    'circle-stroke-width': 1
+  }
+}} />
+
+const AssetCity = props => <Layer {...{
   id: 'asset_groups_heatmap',
   source: 'assets',
   'source-layer': 'asset_heatmap',
@@ -285,8 +290,55 @@ const AssetGroupHeatmap3 = props => <Layer {...{
   ...props
 }} />
 
+const styles = [
+  {
+    mapProps: { terrain: null },
+    mapStyle: linz_topographic
+  },
+  {
+    mapProps: { terrain: null },
+    mapStyle: linz_aerial
+  },
+  {
+    mapProps: {
+      maxPitch: 85,
+      terrain: {
+        source: 'dem',
+        exaggeration: 1
+      }
+    },
+    mapStyle: linz_aerial,
+    mapContent: () => <Source
+      id='dem'
+      type='raster-dem'
+      url='https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=mra0eq3zFMRQ8yFgwd1D'
+      tileSize={512}
+      maxzoom={14}
+    />
+  },
+  // TODO: This renders very slow
+  // {
+  //   mapProps: {
+  //     maxPitch: 85,
+  //     terrain: {
+  //       source: 'dem',
+  //       exaggeration: 1
+  //     }
+  //   },
+  //   mapStyle: linz_topographic,
+  //   mapContent: () => <Source
+  //     id='dem'
+  //     type='raster-dem'
+  //     url='https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=mra0eq3zFMRQ8yFgwd1D'
+  //     tileSize={512}
+  //     maxzoom={14}
+  //   />
+  // }
+]
+
 const MapView = () => {
   const [popupDetails, setPopupDetails] = useState()
+  const [styleIndex, setStyleIndex] = useState(0)
   const { map } = useMap()
 
   const [viewState, setViewState] = useState({
@@ -296,6 +348,8 @@ const MapView = () => {
     bearing: 0,
     pitch: 38.50000000000001
   })
+
+  const MapContent = styles[styleIndex].mapContent
 
   return <Map
     id='map'
@@ -328,14 +382,10 @@ const MapView = () => {
       map.getCanvas().style.cursor = ''
     }}
     interactiveLayerIds={['assets']}
-    // maxPitch={85}
-    // mapStyle={linz_aerial}
-    mapStyle={linz_topographic}
-    // terrain={{
-    //   source: 'dem',
-    //   exaggeration: 1
-    // }}
+    mapStyle={styles[styleIndex].mapStyle}
+    {...styles[styleIndex].mapProps ?? {}}
   >
+    {MapContent && <MapContent />}
     {popupDetails && <Popup
       longitude={popupDetails.coord[0]}
       latitude={popupDetails.coord[1]}
@@ -347,88 +397,36 @@ const MapView = () => {
       }</b></div>
       <div>{popupDetails.description}</div>
     </Popup>}
-    {/* <NavigationControl /> */}
+    <NavigationControl
+      showCompass={true}
+      showZoom={false}
+    />
     <FullscreenControl />
-    <ScaleControl />
-    {/* <HomeControl
-      position='top-right'
-      displayControlsDefault={false}
-      controls={{
-        polygon: true,
-        trash: true
-      }}
-    /> */}
+    <ScaleControl
+      position='bottom-right'
+    />
     <Source
       id='assets'
       type='vector'
       format='pbf'
       tiles={['http://localhost:8080/tiles/{z}/{x}/{y}.pbf']}
     />
-    {/* <Source
-      id='dem'
-      type='raster-dem'
-      url='https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=mra0eq3zFMRQ8yFgwd1D'
-      tileSize={512}
-      maxzoom={14}
-    /> */}
+    <div
+      style={{
+        pointerEvents: 'all',
+        zIndex: 2,
+        position: 'absolute',
+        top: 90,
+        right: 10
+      }}
+    >
+      <div className='maplibregl-ctrl maplibregl-ctrl-group' style={{ width: '29px' }}><button onClick={e => {
+        setStyleIndex((styleIndex + 1) % styles.length)
+      }} className='maplibregl-ctrl-terrain' type='button' aria-label='Toggle basemap' title='Toggle basemap'><span className='maplibregl-ctrl-icon' aria-hidden='true'></span></button></div>
+    </div>
     <Assets />
-    {/* <AssetGroupCounts /> */}
-    {/* <AssetGroupConditionCounts /> */}
-    {/* <AssetGroupHeatmap1 /> */}
-    {/* <AssetGroupHeatmap2 /> */}
-    <AssetGroupHeatmap3 />
+    <AssetCity />
   </Map>
 }
 
-// export default () => <MapProvider>
-//   <div style={{
-//     display: 'grid',
-//     gridTemplateColumns: '1fr 1fr',
-//     gridTemplateRows: '1fr',
-//     height: '100vh'
-//   }}>
-//   <div>
-//     Hello
-//   </div>
-//   <MapView />
-// </div>
-// </MapProvider>
-
-export default () => <MapProvider>
-  <MapView />
-</MapProvider>
-
-const TextLayer = ({ layout, paint, ...props }) => <Layer {...{
-  type: 'symbol',
-  layout: {
-    'text-ignore-placement': true,
-    'text-pitch-alignment': 'map',
-    'text-anchor': 'right',
-    'text-font': ['Open Sans Bold'],
-    'text-size': 11,
-    ...layout
-  },
-  paint: {
-    'text-color': '#ffffff',
-    'text-halo-color': '#000000',
-    'text-halo-width': 1,
-    ...paint
-  },
-  ...props
-}} />
-
-const CircleLayer = ({ layout = {}, paint, ...props }) => <Layer {...{
-  type: 'circle',
-  layout,
-  paint: {
-    'circle-pitch-alignment': 'map',
-    'circle-translate-anchor': 'viewport',
-    'circle-pitch-scale': 'viewport',
-    'circle-radius': 3,
-    'circle-color': '#ffffff',
-    'circle-stroke-color': '#000000',
-    'circle-stroke-width': 1,
-    ...paint
-  },
-  ...props
-}} />
+export default () => <MapProvider><MapView /></MapProvider>
