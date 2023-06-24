@@ -1,6 +1,15 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useState } from 'react'
-import { Map, NavigationControl, Source, Layer } from 'react-map-gl'
+import {
+  Map,
+  NavigationControl,
+  Popup,
+  FullscreenControl,
+  Source,
+  Layer,
+  MapProvider,
+  useMap
+} from 'react-map-gl'
 import maplibregl from 'maplibre-gl'
 import linz_aerial from './linz_aerial.json'
 import linz_topographic from './linz_topographic.json'
@@ -30,6 +39,37 @@ const AssetGroupCounts = props => <Layer {...{
   },
   ...props
 }} />
+
+// // Create a popup, but don't add it to the map yet.
+// var popup = new maplibregl.Popup({
+//   closeButton: false,
+//   closeOnClick: false
+// });
+
+// map.on('mouseenter', 'places', function (e) {
+//   // Change the cursor style as a UI indicator.
+//   map.getCanvas().style.cursor = 'pointer';
+
+//   const coordinates = e.features[0].geometry.coordinates.slice()
+//   const name = e.features[0].properties.name
+//   const description = e.features[0].properties.description
+
+//   // Ensure that if the map is zoomed out such that multiple
+//   // copies of the feature are visible, the popup appears
+//   // over the copy being pointed to.
+//   while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+//     coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+//   }
+
+//   // Populate the popup and set its coordinates
+//   // based on the feature found.
+//   popup.setLngLat(coordinates).setHTML(description).addTo(map);
+// });
+
+// map.on('mouseleave', 'places', function () {
+//   map.getCanvas().style.cursor = '';
+//   popup.remove();
+// });
 
 const Assets = props => <Layer {...{
   id: 'assets',
@@ -207,11 +247,11 @@ const AssetGroupHeatmap2 = props => <Layer {...{
     'circle-pitch-alignment': 'map',
     'circle-translate-anchor': 'map',
     'circle-pitch-scale': 'map',
-    'circle-radius': 5,
+    'circle-radius': 3,
     'circle-stroke-color': '#000000',
-    'circle-stroke-width': 1.5,
+    'circle-stroke-width': 1,
     'circle-color': {
-      'property': 'avg_condition_score',
+      'property': 'condition_score',
       'stops': [
         [0, score_colours[0]],
         [1, score_colours[1]],
@@ -231,7 +271,7 @@ const AssetGroupHeatmap3 = props => <Layer {...{
   type: 'fill-extrusion',
   paint: {
     'fill-extrusion-color': {
-      'property': 'avg_condition_score',
+      'property': 'condition_score',
       'stops': [
         [0, score_colours[0]],
         [1, score_colours[1]],
@@ -245,7 +285,10 @@ const AssetGroupHeatmap3 = props => <Layer {...{
   ...props
 }} />
 
-export default () => {
+const MapView = () => {
+  const [popupDetails, setPopupDetails] = useState()
+  const { map } = useMap()
+
   const [viewState, setViewState] = useState({
     latitude: -38.580959820516135,
     longitude: 175.23990528218496,
@@ -255,30 +298,94 @@ export default () => {
   })
 
   return <Map
+    id='map'
     {...viewState}
     mapLib={maplibregl}
     onMove={e => {
       // console.log(e.viewState)
       setViewState(e.viewState)
     }}
+    onClick={e => {
+      const feature = e.features[0]
+      if (!feature || feature.layer.id != 'assets') return
+      const coord = feature.geometry.coordinates.slice()
+      while (Math.abs(e.lngLat.lng - coord[0]) > 180)
+        coord[0] += e.lngLat.lng > coord[0] ? 360 : -360
+      const { name, description } = feature.properties
+      setPopupDetails({
+        coord,
+        name,
+        description,
+        href: `https://www.google.com/maps/search/?api=1&query=${coord[1]},${coord[0]}`
+      })
+    }}
+    onMouseEnter={e => {
+      map.getCanvas().style.cursor = 'pointer'
+    }}
+    onMouseLeave={e => {
+      map.getCanvas().style.cursor = ''
+    }}
+    interactiveLayerIds={['assets']}
+    // maxPitch={85}
     // mapStyle={linz_aerial}
     mapStyle={linz_topographic}
+    // terrain={{
+    //   source: 'dem',
+    //   exaggeration: 1
+    // }}
   >
-    <NavigationControl />
+    {popupDetails && <Popup
+      longitude={popupDetails.coord[0]}
+      latitude={popupDetails.coord[1]}
+      anchor='bottom'
+      onClose={() => setPopupDetails()}>
+      <div><b>{popupDetails.href
+        ? <a href={popupDetails.href} target='_blank'>{popupDetails.name}</a>
+        : popupDetails.name
+      }</b></div>
+      <div>{popupDetails.description}</div>
+    </Popup>}
+    {/* <NavigationControl /> */}
+    <FullscreenControl />
     <Source
       id='assets'
       type='vector'
       format='pbf'
       tiles={['http://localhost:8080/tiles/{z}/{x}/{y}.pbf']}
     />
+    {/* <Source
+      id='dem'
+      type='raster-dem'
+      url='https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=mra0eq3zFMRQ8yFgwd1D'
+      tileSize={512}
+      maxzoom={14}
+    /> */}
     <Assets />
     {/* <AssetGroupCounts /> */}
     {/* <AssetGroupConditionCounts /> */}
     {/* <AssetGroupHeatmap1 /> */}
-    {/* <AssetGroupHeatmap2 /> */}
-    <AssetGroupHeatmap3 />
+    <AssetGroupHeatmap2 />
+    {/* <AssetGroupHeatmap3 /> */}
   </Map>
 }
+
+// export default () => <MapProvider>
+//   <div style={{
+//     display: 'grid',
+//     gridTemplateColumns: '1fr 1fr',
+//     gridTemplateRows: '1fr',
+//     height: '100vh'
+//   }}>
+//   <div>
+//     Hello
+//   </div>
+//   <MapView />
+// </div>
+// </MapProvider>
+
+export default () => <MapProvider>
+  <MapView />
+</MapProvider>
 
 const TextLayer = ({ layout, paint, ...props }) => <Layer {...{
   type: 'symbol',

@@ -17,8 +17,8 @@ import {
 const ch = await chdb()
 // await import_assets(ch)
 
-const extent = 4096
-const group_depth = 5 // e.g. cluster 16 in a tile 2 ^ group_depth ^ 2
+const extent = 1024
+const group_depth = 8 // e.g. cluster 16 in a tile 2 ^ group_depth ^ 2
 const depth_offset = extent / Math.pow(2, group_depth) / 2
 
 const get_tile_data = async viewing => {
@@ -82,8 +82,8 @@ app.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
       features: asset_groups.map(g => ({
         type: 1,
         properties: {
+          condition_score: g.avg_condition_score,
           max_condition_score: g.max_condition_score,
-          avg_condition_score: g.avg_condition_score,
           min_condition_score: g.min_condition_score,
           count: g.count,
           count_0: g.count_0 != 0 ? g.count_0 : null,
@@ -104,9 +104,7 @@ app.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
         return {
           type: 3,
           properties: {
-            max_condition_score: g.max_condition_score,
-            avg_condition_score: g.avg_condition_score,
-            min_condition_score: g.min_condition_score,
+            condition_score: g.avg_condition_score,
             count: g.count
           },
           geometry: [[
