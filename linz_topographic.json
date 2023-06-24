@@ -5,12 +5,12 @@
   "sources": {
     "LINZ Basemaps": {
       "type": "vector",
-      "attribution": "Â© 2022 ToitÅ« Te Whenua - CC BY 4.0",
-      "url": "https://basemaps.linz.govt.nz/v1/tiles/topographic/EPSG:3857/tile.json?api=c01h3btkyny4fac0h17rrew8kz6"
+      "attribution": "© 2022 Toit Te Whenua - CC BY 4.0",
+      "url": "https://basemaps.linz.govt.nz/v1/tiles/topographic/EPSG:3857/tile.json?api=d01h3fszzhp3ygzb9p620t50jjw"
     },
     "LINZ-Texture-Relief": {
       "tiles": [
-        "https://basemaps.linz.govt.nz/v1/tiles/texturereliefshade/EPSG:3857/{z}/{x}/{y}.webp?api=c01h3btkyny4fac0h17rrew8kz6"
+        "https://basemaps.linz.govt.nz/v1/tiles/texturereliefshade/EPSG:3857/{z}/{x}/{y}.webp?api=d01h3fszzhp3ygzb9p620t50jjw"
       ],
       "type": "raster",
       "minzoom": 0,

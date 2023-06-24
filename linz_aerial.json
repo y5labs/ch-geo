@@ -4,7 +4,7 @@
     "basemaps-aerial": {
       "type": "raster",
       "tiles": [
-        "https://basemaps.linz.govt.nz/v1/tiles/aerial/WebMercatorQuad/{z}/{x}/{y}.webp?api=c01h3btkyny4fac0h17rrew8kz6"
+        "https://basemaps.linz.govt.nz/v1/tiles/aerial/WebMercatorQuad/{z}/{x}/{y}.webp?api=d01h3fszzhp3ygzb9p620t50jjw"
       ],
       "tileSize": 256
     }
