@@ -344,11 +344,11 @@ const MapView = () => {
   const { map } = useMap()
 
   const [viewState, setViewState] = useState({
-    latitude: -38.580959820516135,
-    longitude: 175.23990528218496,
-    zoom: 9.640285348003506,
-    bearing: 0,
-    pitch: 0 // 38.50000000000001
+    // latitude: -38.580959820516135,
+    // longitude: 175.23990528218496,
+    // zoom: 9.640285348003506,
+    // bearing: 0,
+    // pitch: 0 // 38.50000000000001
   })
 
   const MapContent = styles[styleIndex].mapContent
